@@ -1,0 +1,16 @@
+[package]
+name = "asteroids"
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+edition.workspace = true
+repository.workspace = true
+keywords.workspace = true
+
+
+[dependencies]
+rand.workspace = true
+bevy.workspace = true
+nonempty.workspace = true
+
+relativity.workspace = true
