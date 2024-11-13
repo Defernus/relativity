@@ -93,3 +93,13 @@ different frames of reference, the order of these events can be different.
 
 If $\Delta x^2 < (c \Delta t)^2$, then events are timelike separated. The order
 of these events is the same in every frame of reference.
+
+# Lorentz invariant
+
+$$
+
+\tau^2 = \Delta t^2 - \frac{\Delta x^2}{c^2} =
+
+\Delta t'^2 - \frac{\Delta x'^2}{c^2}
+
+$$

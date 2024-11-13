@@ -52,6 +52,11 @@ pub struct SpacetimeEvent {
 }
 
 impl SpacetimeEvent {
+    pub const ZERO: Self = Self {
+        pos: DVec3::ZERO,
+        time: 0.0,
+    };
+
     #[inline(always)]
     pub fn new(pos: DVec3) -> Self {
         Self { pos, time: 0.0 }
@@ -77,5 +82,39 @@ impl SpacetimeEvent {
             pos: DVec3::new(transformed.y, transformed.z, transformed.w),
             time: transformed.x / c,
         }
+    }
+}
+
+impl std::ops::Sub for SpacetimeEvent {
+    type Output = SpacetimeEvent;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        SpacetimeEvent {
+            pos: self.pos - rhs.pos,
+            time: self.time - rhs.time,
+        }
+    }
+}
+
+impl std::ops::Add for SpacetimeEvent {
+    type Output = SpacetimeEvent;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        SpacetimeEvent {
+            pos: self.pos + rhs.pos,
+            time: self.time + rhs.time,
+        }
+    }
+}
+
+impl std::ops::AddAssign for SpacetimeEvent {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = *self + rhs;
+    }
+}
+
+impl std::ops::SubAssign for SpacetimeEvent {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = *self - rhs;
     }
 }

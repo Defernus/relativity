@@ -6,7 +6,7 @@ fn main() {
         .add_plugins((DefaultPlugins.set(ImagePlugin::default_nearest()),))
         .insert_resource(CameraSettings { scale: 20.0 })
         .insert_resource(RelativeSettings {
-            speed_of_light: 5.0,
+            speed_of_light: 1.0,
         })
         .add_systems(Startup, (sys_setup,))
         .add_systems(
