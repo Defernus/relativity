@@ -1,3 +1,4 @@
+use crate::*;
 use bevy::math::{DMat4, DVec3, DVec4};
 
 #[inline(always)]
@@ -83,6 +84,34 @@ impl SpacetimeEvent {
             time: transformed.x / c,
         }
     }
+
+    /// Calculate the squared spacetime interval between two events.
+    pub fn spacetime_interval_squared(self, other: Self, c: f64) -> f64 {
+        let delta_pos = other.pos - self.pos;
+        let delta_time = other.time - self.time;
+
+        (c * delta_time).powi(2) - delta_pos.length_squared()
+    }
+
+    pub fn get_separation(self, other: Self, c: f64) -> SpacetimeSeparation {
+        let interval = self.spacetime_interval_squared(other, c);
+
+        if interval >= 0.0 {
+            SpacetimeSeparation::Timelike
+        } else {
+            SpacetimeSeparation::Spacelike
+        }
+    }
+
+    pub fn light_cone(self, c: f64) -> LightCone {
+        LightCone::new(self, c)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SpacetimeSeparation {
+    Spacelike,
+    Timelike,
 }
 
 impl std::ops::Sub for SpacetimeEvent {

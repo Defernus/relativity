@@ -1,53 +1,20 @@
 use crate::*;
 use bevy::math::DVec3;
 use bevy::prelude::*;
-use nonempty::NonEmpty;
-use relativity::{lorentz_factor_from_vel, velocity_to_new_rf, SpacetimeEvent};
+use relativity::{SpacetimeEvent, VisibleWorldLineEvent, WorldLine, WorldLineEvent};
 
 #[derive(Debug, Component)]
 pub struct RelativeObject {
     pub id: u32,
-    pub world_line: NonEmpty<WorldLineEvent>,
+    pub world_line: WorldLine,
 }
 
 impl RelativeObject {
-    pub fn find_last_event(
-        &self,
-        position: SpacetimeEvent,
-        velocity: DVec3,
-        c: f64,
-    ) -> Option<&WorldLineEvent> {
-        for event in self.world_line.iter().rev() {
-            let coord = event.coord - position;
-            let coord = coord.to_reference_frame(velocity, c);
-
-            if coord.time <= 0.0 {
-                return Some(event);
-            }
-        }
-
-        None
-    }
-}
-
-/// Event in object's world line.
-#[derive(Debug, Copy, Clone)]
-pub struct WorldLineEvent {
-    /// Space time coordinate of the object in main reference frame.
-    pub coord: SpacetimeEvent,
-
-    /// Velocity of the object in main reference frame.
-    pub velocity: DVec3,
-
-    pub object_proper_time: f64,
-}
-
-impl RelativeObject {
-    pub fn new(id: u32, pos: DVec3, velocity: DVec3) -> Self {
+    pub fn new(id: u32, coord: SpacetimeEvent, velocity: DVec3) -> Self {
         Self {
             id,
-            world_line: NonEmpty::new(WorldLineEvent {
-                coord: SpacetimeEvent::new(pos),
+            world_line: WorldLine::new(WorldLineEvent {
+                coord,
                 velocity,
                 object_proper_time: 0.0,
             }),
@@ -70,32 +37,24 @@ pub fn sys_update_relative_objects(
     let observer = observer_query.single();
 
     for (object, mut transform, children, mut visible) in query.iter_mut() {
-        let Some(last_event) = object.find_last_event(observer.coord, observer.velocity, c) else {
-            // object was not created yet in observer's reference frame
+        let Some(VisibleWorldLineEvent {
+            relative_coord,
+            proper_time: object_proper_time,
+            velocity,
+            relative_velocity,
+        }) = object
+            .world_line
+            .get_visible_event(observer.coord, observer.velocity, c)
+        else {
             *visible = Visibility::Hidden;
             continue;
         };
 
         *visible = Visibility::Visible;
 
-        let relative_coord =
-            (last_event.coord - observer.coord).to_reference_frame(observer.velocity, c);
-        let relative_velocity = velocity_to_new_rf(observer.velocity, last_event.velocity, c);
-
-        let observer_delta_time = -relative_coord.time;
-
-        let new_pos = relative_coord.pos + relative_velocity * observer_delta_time;
-
-        transform.translation.x = new_pos.x as f32;
-        transform.translation.y = new_pos.y as f32;
-        transform.translation.z = new_pos.z as f32;
-
-        // gamma factors relative to main reference frame
-        let object_gamma = lorentz_factor_from_vel(last_event.velocity, c);
-        let observer_gamma = lorentz_factor_from_vel(observer.velocity, c);
-
-        let object_proper_time =
-            last_event.object_proper_time + observer_delta_time * observer_gamma / object_gamma;
+        transform.translation.x = relative_coord.pos.x as f32;
+        transform.translation.y = relative_coord.pos.y as f32;
+        transform.translation.z = relative_coord.pos.z as f32;
 
         for child in children.iter() {
             if let Ok(mut text) = text_query.get_mut(*child) {
@@ -107,7 +66,7 @@ pub fn sys_update_relative_objects(
                     rv={:.4}",
                     object.id,
                     object_proper_time,
-                    last_event.velocity.length(),
+                    velocity.length(),
                     relative_velocity.length(),
                 );
             }

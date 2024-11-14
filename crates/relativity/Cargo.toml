@@ -10,3 +10,4 @@ keywords.workspace = true
 
 [dependencies]
 bevy.workspace = true
+nonempty.workspace = true

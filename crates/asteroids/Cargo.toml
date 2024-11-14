@@ -11,6 +11,5 @@ keywords.workspace = true
 [dependencies]
 rand.workspace = true
 bevy.workspace = true
-nonempty.workspace = true
 
 relativity.workspace = true

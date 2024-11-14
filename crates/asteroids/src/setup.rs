@@ -5,7 +5,7 @@ use bevy::sprite::{Material2d, MaterialMesh2dBundle, Mesh2dHandle};
 use relativity::SpacetimeEvent;
 
 struct ObjectInit {
-    pos: DVec3,
+    coord: SpacetimeEvent,
     velocity: DVec3,
 }
 
@@ -27,23 +27,14 @@ pub fn sys_setup(
 
     let next_id = 0;
 
-    let next_id = circle_objects(
+    let _next_id = grid_objects(
         &mut commands,
-        DVec3::X * 4.0,
-        2.0,
+        SpacetimeEvent::new(DVec3::X * 4.0).with_time(-1000.0),
         DVec3::ZERO,
-        4,
-        next_id,
-        circle.clone(),
-        materials.add(color),
-    );
-
-    let _next_id = circle_objects(
-        &mut commands,
-        -DVec3::X * 16.0,
+        32,
         2.0,
-        DVec3::X * 0.9,
-        4,
+        32,
+        2.0,
         next_id,
         circle.clone(),
         materials.add(color),
@@ -73,37 +64,42 @@ pub fn sys_setup(
         .set_parent(object_entity);
 }
 
-fn circle_objects<M: Material2d>(
+/// Spawn objects in grid pattern
+fn grid_objects<M: Material2d>(
     commands: &mut Commands,
-    pos: DVec3,
-    radius: f64,
+    coord: SpacetimeEvent,
     velocity: DVec3,
-    segments: u32,
+    rows: u32,
+    row_spacing: f64,
+    cols: u32,
+    col_spacing: f64,
     id_start: u32,
     mesh: Mesh2dHandle,
     material: Handle<M>,
 ) -> u32 {
-    for i in 0..segments {
-        let id = id_start + i;
+    let x_offset = cols as f64 * col_spacing * 0.5;
+    let y_offset = rows as f64 * row_spacing * 0.5;
 
-        let angle = i as f64 * 2.0 * std::f64::consts::PI / segments as f64;
+    for i in 0..rows {
+        for j in 0..cols {
+            let id = id_start + i * cols + j;
 
-        ObjectInit {
-            pos: pos + DVec3::new(angle.cos() * radius, angle.sin() * radius, 0.0),
-            velocity,
+            let mut object_coord = coord;
+            object_coord.pos += DVec3::new(
+                j as f64 * col_spacing - x_offset,
+                i as f64 * row_spacing - y_offset,
+                0.0,
+            );
+
+            ObjectInit {
+                coord: object_coord,
+                velocity,
+            }
+            .spawn(commands, id, mesh.clone(), material.clone(), true);
         }
-        .spawn(commands, id, mesh.clone(), material.clone(), true);
     }
 
-    ObjectInit { pos, velocity }.spawn(
-        commands,
-        id_start + segments,
-        mesh.clone(),
-        material.clone(),
-        true,
-    );
-
-    id_start + segments + 1
+    id_start + rows * cols
 }
 
 impl ObjectInit {
@@ -115,8 +111,6 @@ impl ObjectInit {
         material: Handle<M>,
         is_text_visible: bool,
     ) {
-        let z_offset = DVec3::Z * (id + 1) as f64 * 0.0001;
-
         let object_entity = commands
             .spawn(MaterialMesh2dBundle {
                 mesh,
@@ -124,7 +118,7 @@ impl ObjectInit {
                 ..default()
             })
             .insert(Name::new(format!("object_{}", id)))
-            .insert(RelativeObject::new(id, self.pos + z_offset, self.velocity))
+            .insert(RelativeObject::new(id, self.coord, self.velocity))
             .id();
 
         let visibility = if is_text_visible {
