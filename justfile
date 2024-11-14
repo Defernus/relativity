@@ -7,6 +7,9 @@ default:
 asteroids:
     cargo run --bin asteroids
 
+stars:
+    cargo run --bin stars
+
 lint:
     cargo fmt --all --check
     cargo check

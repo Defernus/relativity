@@ -95,7 +95,7 @@ fn grid_objects<M: Material2d>(
                 coord: object_coord,
                 velocity,
             }
-            .spawn(commands, id, mesh.clone(), material.clone(), true);
+            .spawn(commands, id, mesh.clone(), material.clone());
         }
     }
 
@@ -109,7 +109,6 @@ impl ObjectInit {
         id: u32,
         mesh: Mesh2dHandle,
         material: Handle<M>,
-        is_text_visible: bool,
     ) {
         let object_entity = commands
             .spawn(MaterialMesh2dBundle {
@@ -121,17 +120,11 @@ impl ObjectInit {
             .insert(RelativeObject::new(id, self.coord, self.velocity))
             .id();
 
-        let visibility = if is_text_visible {
-            Visibility::Visible
-        } else {
-            Visibility::Hidden
-        };
-
         commands
             .spawn(Text2dBundle {
                 transform: Transform::from_translation(Vec3::Z * 0.7).with_scale(Vec3::splat(0.01)),
                 text: Text::from_section(format!("object"), TextStyle::default()),
-                visibility,
+                visibility: Visibility::Inherited,
                 ..Default::default()
             })
             .set_parent(object_entity);
